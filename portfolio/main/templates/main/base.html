@@ -1,0 +1,46 @@
+<!doctype html>
+{% load static %}
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel ="stylesheet" href="{% static 'css/style.css' %}?ver={% now 'u'  %}">
+
+    <title>{% block title %}{% endblock %}</title>
+    <script type="text/javascript">
+    </script>
+</head>
+<body>
+    <div class="preloader">
+      <div class="preloader__row">
+        <div class="preloader__item"></div>
+        <div class="preloader__item"></div>
+      </div>
+    </div>
+    <h1 align="center">
+        <a href="{% url 'index' %}">Список операций</a> -
+        <a href="{% url 'stats' %}" title="ЕСЛИ ГРУЗИТСЯ ДОЛГО - НАДО ПОДОЖДАТЬ">Статистика </a> -
+        <a href="{% url 'admin:index' %}" title="Администрирование">Администрирование </a>
+<!--        <a href="{% url 'test' %}" title="test">test </a> - -->
+<!--        <a href="{% url 'test2' %}" title="test2">test 2</a> - -->
+    </h1>
+<br>
+      <table border="0px" width="98%" align="center">
+            <tr>
+        {% if all_tikers_sort %}
+            {% for a in all_tikers_sort %}
+            {% ifchanged %}
+                <td> <a href="{% url 'index' %}tiker/{{ a.tiker }}">{{ a.tiker }}</a> </td>
+            {% endifchanged %}
+            {% endfor %}
+        {% else %}
+            %(
+        {% endif %}
+            </tr>
+        </table>
+{% block content %}{% endblock %}
+</body>
+</html>

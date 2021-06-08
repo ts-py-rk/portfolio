@@ -1,0 +1,136 @@
+{% extends 'main/base.html' %}
+
+{% load main_filter %}
+
+{% block title %}
+    СТАТИСТИКА
+{% endblock %}
+
+{% block content %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+
+    const getSort = ({ target }) => {
+        const order = (target.dataset.order = -(target.dataset.order || -1));
+        const index = [...target.parentNode.cells].indexOf(target);
+        const collator = new Intl.Collator(['en', 'ru'], { numeric: true });
+        const comparator = (index, order) => (a, b) => order * collator.compare(
+            a.children[index].innerHTML,
+            b.children[index].innerHTML
+        );
+
+        for(const tBody of target.closest('table').tBodies)
+            tBody.append(...[...tBody.rows].sort(comparator(index, order)));
+
+        for(const cell of target.parentNode.cells)
+            cell.classList.toggle('sorted', cell === target);
+    };
+
+    document.querySelectorAll('.table_sort thead').forEach(tableTH => tableTH.addEventListener('click', () => getSort(event)));
+
+});
+</script>
+<br>
+<!--    <table class="table_tiker">-->
+    <table class="table_sort">
+        <caption>СТАТИСТИКА</caption>
+        <thead>
+        <tr>
+            <th data-order="-1" class="sorted">Тикер</th>
+            <th>Средняя, $</th>
+            <th>-></th>
+            <th>Курс, $</th>
+            <th> $</th>
+            <th> %</th>
+            <th>Кол-во</th>
+            <th>Было, $</th>
+            <th>-></th>
+            <th>Сейчас, $</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% if tikers %}
+            {% for t in tikers.values %}
+                {% ifchanged %}
+                    <tr>
+                        <td>
+                            {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                <span class="profit">
+                            {% else %}
+                                <span class="loss">
+                            {% endif %}
+                            <a href="{% url 'index' %}tiker/{{ t }}">
+                                {{ t }}
+                            </a></span>
+                        </td>
+                        <td align="right">
+                            {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                <span class="profit">
+                            {% else %}
+                                <span class="loss">
+                            {% endif %}
+                            {{ middles|get_value_from_dict:t }} $</span>
+                        </td>
+                        <td align="center">
+                            ->
+                        </td>
+                        <td align="left">
+                            {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                <span class="profit">
+                            {% else %}
+                                <span class="loss">
+                            {% endif %}
+                            {{ courses|get_value_from_dict:t }} $</span>
+                        </td>
+                        <td>
+                            {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                <span class="profit">
+                            {% else %}
+                                <span class="loss">
+                            {% endif %}
+                             {{ profilos_money|get_value_from_dict:t }} $ </span>
+                        </td>
+                        <td>
+                            {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                <span class="profit">
+                            {% else %}
+                                <span class="loss">
+                            {% endif %}
+                            {{ profilos_percent|get_value_from_dict:t }} %</span>
+                        </td>
+                        <td>
+                            {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                <span class="profit">
+                            {% else %}
+                                <span class="loss">
+                            {% endif %}
+                            {{ quantitys|get_value_from_dict:t }} {{ t }}</span>
+                        </td>
+                        <td>
+                            {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                <span class="profit">
+                            {% else %}
+                                <span class="loss">
+                            {% endif %}
+                            {{ volumes|get_value_from_dict:t }} $</span>
+                        </td>
+                        <td align="center">
+                            ->
+                        </td>
+                        <td>
+                            {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                <span class="profit">
+                            {% else %}
+                                <span class="loss">
+                            {% endif %}
+                            {{ in_positions|get_value_from_dict:t }} $</span>
+                        </td>
+                    </tr>
+                {% endifchanged %}
+            {% endfor %}
+        {% else %}
+            ничего нет :(
+        {% endif %}
+        </tbody>
+    </table>
+{% endblock %}

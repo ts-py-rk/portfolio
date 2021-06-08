@@ -1,0 +1,46 @@
+{% extends 'main/base.html' %}
+
+
+{% block title %}
+    {{ title }}
+{% endblock %}
+
+{% block content %}
+
+    <table class="table_dark fixtable">
+    <caption>История операций</caption>
+    <thead>
+        <tr>
+            <td>Тикер</td>
+            <td>Тип позиции</td>
+            <td>Количество</td>
+            <td>Цена</td>
+            <td>Сумма</td>
+            <td>Комиссия</td>
+            <td>Дата</td>
+            <td>Время</td>
+            <td>Вкл/выкл</td>
+        </tr>
+    </thead>
+    <tbody>
+        {% if active %}
+            {% for a in active %}
+            <tr>
+                <td><a href="{% url 'index' %}tiker/{{ a.tiker }}">{{ a.tiker }}</a></td>
+                <td>{{ a.pozition }}</td>
+                <td>{{ a.quantity }} {{ a.tiker }}</td>
+                <td>{{ a.price }}$ </td>
+                <td>{{ a.summa}}$ </td>
+                <td>{{ a.comission}}$ </td>
+                <td>  </td>
+                <td>  </td>
+                <td>  </td>
+                <!-- <td>  </td> -->
+            </tr>
+            {% endfor %}
+        {% else %}
+            %(
+        {% endif %}
+    </tbody>
+    </table>
+{% endblock %}

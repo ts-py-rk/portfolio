@@ -1,0 +1,22 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+    {{ title }}
+{% endblock %}
+
+{% block content %}
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.tiker }}<br>
+    {{ form.pozition }}<br>
+    {{ form.quantity }}<br>
+<!--    {{ form.price }}<br>-->
+    <input type="text" name="price" placeholder="цена">
+    <span>{{ error }}</span><br>
+    <button type="submit">ADD</button>
+</form>
+
+
+
+{% endblock %}

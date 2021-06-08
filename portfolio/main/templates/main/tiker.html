@@ -1,0 +1,109 @@
+{% extends 'main/base.html' %}
+
+
+{% load main_filter %}
+
+{% block title %}
+    {{ tiker }}
+{% endblock %}
+
+{% block content %}
+<!--<h1>{{ tiker }}</h1>-->
+    <table class="table_tiker">
+        <caption>1 {{ tiker }} = {{ course }} $</caption>
+        <tr>
+            <td colspan="2"> {{ profilos }} </td>
+            <td>Оборот</td>
+            <td>Реальное Количество</td>
+            <td>Средняя</td>
+            <td>Объем</td>
+            <td>В позиции, $</td>
+            <td>Комиссия</td>
+        </tr>
+        <tr>
+            <td>{{ delta_money }}$</td>
+            <td>{{ delta_percent }}%</td>
+            <td> {{itogo}} {{tiker}}</td>
+            <td> {{itogo_real}} {{tiker}}</td>
+            <td> {{ middle_course }} $</td>
+            <td> {{ volume }} $</td>
+            <td>{{ in_position }} $</td>
+            <td>{{ comission }} $</td>
+        </tr>
+    </table>
+
+    <form method="post">
+    {% csrf_token %}
+    <table class="table_dark">
+    <caption>Добавить операцию</caption>
+    <tr>
+        <td>Тикер</td>
+        <td>Тип позиции</td>
+        <td>Количество</td>
+        <td>Цена</td>
+        <td></td>
+<!--        <td>Вкл/выкл</td>-->
+    </tr>
+    <tr>
+        <td>
+            <input type="text" name="tiker" value="{{ tiker }}" readonly>
+        </td>
+        <td>
+            <select name="pozition" size="1">
+            <option value="купил">Купил</option>
+            <option value="продал">Продал</option>
+            </select>
+        </td>
+        <td>
+            {{ form.quantity }}
+        </td>
+        <td>
+            <input type="text" name="price" placeholder="цена">
+        </td>
+        <td>
+            <button type="submit">ДОБАВИТЬ</button>
+        </td>
+
+<!--            <td> <input type="checkbox" name="on_off"> </td>-->
+    </tr>
+    </table>
+    <span>{{ error }}</span>
+</form>
+    <table class="table_dark">
+    <caption>История операций</caption>
+    <tr>
+        <td>Тикер</td>
+        <td>Тип позиции</td>
+        <td>
+            Количество
+            <a href="?order_by=quantity">Количество</a>
+            <a href="?{% url_replace request 'order_by' 'price' '-' %}">Количество</a>
+        </td>
+        <td>Дельта</td>
+        <td>Цена</td>
+        <td>Сумма</td>
+        <td>Комиссия</td>
+        <td>Дата</td>
+        <td>Время</td>
+        <td>Вкл/выкл</td>
+    </tr>
+    {% if active %}
+        {% for a in active %}
+        <tr>
+            <td><a href="{% url 'index' %}tiker/{{ a.tiker }}">{{ a.tiker }}</a></td>
+            <td>{{ a.pozition }}</td>
+            <td>{{ a.quantity }} {{ a.tiker }}</td>
+            <td>{{ a.quantity_real }} {{ a.tiker }}</td>
+            <td>{{ a.price }}$ </td>
+            <td>{{ a.summa}}$ </td>
+            <td>{{ a.comission}}$ </td>
+            <td>  </td>
+            <td>  </td>
+            <td> <input type="checkbox" name="on_off"> </td>
+        </tr>
+        {% endfor %}
+    {% else %}
+        %(
+    {% endif %}
+    </table>
+{% endblock %}
