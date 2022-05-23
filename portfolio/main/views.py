@@ -1,122 +1,355 @@
-from django.http import Http404, HttpResponseRedirect
-from django.urls import reverse
-# from .models import Article
-# import datetime
-# import pytils
-# from .models import Month
-# from .models import People
-# from .ips import a
-# from collections import
-
-import sqlite3
-import hashlib
-from pprint import pprint
-from django.http import HttpResponse   		# импортируем для вывода обычного текста
-from django.shortcuts import render, redirect
-from . models import Operation
-from . models import Active
-from django.db.models import Avg
-import requests
+import os
 import json
-from bs4 import BeautifulSoup
+import requests
+from django.urls import reverse
+from django.http import Http404, HttpResponseRedirect
 import logging
+import configparser
+import matplotlib
+import matplotlib.pyplot as plt
+from .models import Active
+from .models import Operation
 from .forms import OperationForm
+from django.db.models import Avg
+from binance.spot import Spot
+from datetime import datetime
+from django.shortcuts import render, redirect
 
-logging.basicConfig(filename='views.log', level=logging.DEBUG, format='%(levelname)s - %(message)s', filemode='w')
+matplotlib.use('Agg')
 
-def swap(lists):
-    for i in range(len(lists)):
-        lists[i][3], lists[i][4] = lists[i][4], lists[i][3]
-    return lists
+logging.basicConfig(filename='views.log',
+                    level=logging.ERROR,
+                    format='%(levelname)s - %(message)s',
+                    filemode='w')
 
-def parser_price(tiker):
-    url_head = 'https://www.binance.com/ru/trade/'
-    url_tail = '_USDT?layout=pro&type=spot'
-    full_url = url_head + tiker + url_tail
-    r = requests.get(full_url)
-    soup = BeautifulSoup(r.text, 'html.parser')
-    # print(f'{soup=}')
-    objects = soup.find('title')
-    # print(f'{objects=}')
-    zagolovok = objects.string
-    # print(f'{zagolovok=}')
-    zagolovok = zagolovok.split(" | ")[0]
-    return float(zagolovok)
+config = configparser.ConfigParser()
+config.read('api.cfg', encoding='utf-8')
 
-def parser_price2(tiker):
-    url_head = 'https://www.binance.com/ru/trade/'
-    url_tail = '_USDT?type=spot'
-    full_url = url_head + tiker + url_tail
-    # print(f'{full_url=}')
-    r = requests.get(full_url)
-    soup = BeautifulSoup(r.text, 'html.parser')
-    objects = soup.find('script', id='__APP_DATA')
-    zagolovok = objects.contents[0]
-    # print(f'{type(zagolovok)=}')
-    zagolovok = zagolovok.split('"close":"')[1]
-    zagolovok = zagolovok.split('","high"')[0]
-    zagolovok = float(zagolovok)
-    # print(f'{zagolovok=}')
-    # print(f'{type(zagolovok)=}')
-    return (zagolovok)
+api_key = config["BINANCE"]["ACTUAL_API_KEY"]
+api_secret = config["BINANCE"]["ACTUAL_SECRET_KEY"]
 
-def get_price(crypto):
-    url = f'https://api.bittrex.com/api/v1.1/public/getticker?market=USD-{crypto}'
-    j = requests.get(url)
-    data = json.loads(j.text)
-    try:
-        price = data['result']['Ask']
+client = Spot(key=api_key, secret=api_secret)
+balances = client.account()['balances']
+portfolio = {}
 
-    except:
-        # print(f'исключение')
-        price = parser_price2(crypto)
+
+def get_price_binance(crypto):
+    logging.debug(f'START GET_PRICE_BINANCE - {crypto}')
+    tiker = crypto
+    tiker_2 = "USDT"
+    para = tiker + tiker_2
+    if tiker != tiker_2:
+        price = float(client.book_ticker(para)['askPrice'])
+    else:
+        price = 1
+    logging.debug(f'{tiker}: {price}$')
+    logging.debug(f'STOP')
     return price
 
-def smart_round(data):
-    # print(f'START')
-    finish = False
-    i = 0
-    # print(f'{i=}')
-    while finish == False:
-        # print(f'START WHILE')
-        a = str(round(data, i))
-        # print(f'{a=}')
-        b = a.split('.')
-        for bb in b:
-            if bb == '0':
-                continue
-            else:
-                finish = True
-        i+=1
-    return round(data, i)
+
+def smart_round(data, i):
+    logging.info(f'START SMART ROUND')
+    logging.debug(f'{data=} - {type(data)=}')
+    if data == 0.0:
+        return 0
+    else:
+        finish = False
+        while finish == False:
+            a = str(round(data, i))
+            b = a.split('.')
+            for bb in b:
+                if bb == '0':
+                    continue
+                else:
+                    finish = True
+            i += 1
+        logging.debug(f'STOP - {round(data, i)=}')
+        return round(data, i)
+
 
 def index(request):
-    actives = Operation.objects.order_by('-id')
-    # ordering = ['tiker']
+    start_time = datetime.now().timestamp()
     all_tikers_sort = Operation.objects.order_by('tiker')
+    btc = Operation.objects.order_by('tiker')
+
+    tikers = {}
+    courses = {}
+    volumes = {}
+    quantitys = {}
+    middles = {}
+    in_positions = {}
+    profilos_money = {}
+    profilos_percent = {}
+    profilos = {}
+
+    for b in btc:
+        logging.debug(f'{b=}')
+        # tikers
+        # course
+        if b.tiker not in tikers:
+            tikers[b.tiker] = b.tiker
+            courses[b.tiker] = get_price_binance(b.tiker)
+        # quantitys
+        if b.tiker not in quantitys:
+            logging.debug(f'if_2')
+            quantitys[b.tiker] = b.quantity_real
+        else:
+            quantitys[b.tiker] += b.quantity_real
+        quantitys[b.tiker] = quantitys[b.tiker]
+        # volumes
+        if b.tiker not in volumes:
+            logging.debug(f'if_3')
+            volumes[b.tiker] = b.quantity_real * b.price
+        else:
+            volumes[b.tiker] += (b.quantity_real * b.price)
+        # in_positions
+        if b.tiker not in in_positions:
+            logging.debug(f'if_4')
+            in_positions[b.tiker] = b.quantity_real * courses[b.tiker]
+        else:
+            in_positions[b.tiker] += b.quantity_real * courses[b.tiker]
+
+    for t in tikers.values():
+        logging.debug(f'{t=}')
+        # middles
+        try:
+            middles[t] = volumes[t] / quantitys[t]
+        except:
+            middles[t] = 66666
+            logging.error(f'chet fignya so srednej')
+        # profilos_money
+        # profilos_percent
+        profilos_money[t] = in_positions[t] - volumes[t]
+        if profilos_money[t] < 0:
+            profilos[t] = 'ЛОСЬ'
+            profilos_percent[t] = (in_positions[t] / (volumes[t] / 100)) - 100
+        else:
+            profilos[t] = 'PROFIT'
+            profilos_percent[t] = (in_positions[t] / (volumes[t] / 100)) - 100
+
+    logging.debug(f'{tikers=}')
+    logging.debug(f'{courses=}')
+    logging.debug(f'{volumes=}')
+    logging.debug(f'{quantitys=}')
+    logging.debug(f'{middles=}')
+    logging.debug(f'{in_positions=}')
+    logging.debug(f'{profilos_money=}')
+    logging.debug(f'{profilos_percent=}')
+    logging.debug(f'{profilos=}')
+
+    one_hundread_percent = sum(in_positions.values())
+    bitcoin_depo = '₿' + str(round(sum(in_positions.values()) / get_price_binance('BTC'), 5))
+    usdt_depo = '$' + str(round(one_hundread_percent, 2))
+
+
     content = {
-        'title': 'INDEX',
-        'active': actives,
-        'all_tikers_sort' : all_tikers_sort,
+        'tikers': tikers,
+        'courses': courses,
+        'quantitys': quantitys,
+        'middles': middles,
+        'in_positions': in_positions,
+        'volumes': volumes,
+        'all_tikers_sort': all_tikers_sort,
+        'profilos_money': profilos_money,
+        'profilos_percent': profilos_percent,
+        'profilos': profilos,
+        'usdt': usdt_depo,
+        'btc': bitcoin_depo,
     }
+
+    for k, v in content.items():
+        if type(v) == dict:
+            for kk, vv in v.items():
+                try:
+                    content[k][kk] = smart_round(vv, 0)
+                except:
+                    pass
+                    logging.error(f'ERROR!')
+
+    page_load = f'--- page loads {round(datetime.now().timestamp() - start_time, 0)} seconds ---'
+    content['page_load'] = page_load
     return render(request, 'main/index.html', content)
 
+
+def stats(request):
+    start_time = datetime.now().timestamp()
+    all_tikers_sort = Operation.objects.order_by('tiker')
+    btc = Operation.objects.order_by('tiker')
+    tikers = {}
+    courses = {}
+    volumes = {}
+    quantitys = {}
+    middles = {}
+    in_positions = {}
+    profilos_money = {}
+    profilos_percent = {}
+    profilos = {}
+
+    for b in btc:
+        # tikers
+        # course
+        if b.tiker not in tikers:
+            tikers[b.tiker] = b.tiker
+            courses[b.tiker] = get_price_binance(b.tiker)
+        # quantitys
+        if b.tiker not in quantitys:
+            quantitys[b.tiker] = b.quantity_real
+        else:
+            quantitys[b.tiker] += b.quantity_real
+        quantitys[b.tiker] = quantitys[b.tiker]
+        # volumes
+        if b.tiker not in volumes:
+            volumes[b.tiker] = b.quantity_real * b.price
+        else:
+            volumes[b.tiker] += (b.quantity_real * b.price)
+        # in_positions
+        if b.tiker not in in_positions:
+            in_positions[b.tiker] = b.quantity_real * courses[b.tiker]
+        else:
+            in_positions[b.tiker] += b.quantity_real * courses[b.tiker]
+
+    for t in tikers.values():
+        # middles
+        try:
+            middles[t] = volumes[t] / quantitys[t]
+        except:
+            middles[t] = 66666
+            logging.error(f'chet ne to so srednej')
+        # profilos_money
+        # profilos_percent
+        profilos_money[t] = in_positions[t] - volumes[t]
+        if profilos_money[t] < 0:
+            profilos[t] = 'ЛОСЬ'
+            profilos_percent[t] = (in_positions[t] / (volumes[t] / 100)) - 100
+        else:
+            profilos[t] = 'PROFIT'
+            profilos_percent[t] = (in_positions[t] / (volumes[t] / 100)) - 100
+
+    percents = {}
+    data_names = []
+    data_values = []
+    one_hundread_percent = sum(in_positions.values())
+    one_percent = one_hundread_percent / 100
+    dpi = 80
+    fig = plt.figure(dpi=dpi, figsize=(900 / dpi, 900 / dpi))
+    matplotlib.rcParams.update({'font.size': 9})
+    bitcoin_depo = str(round(sum(in_positions.values()) / get_price_binance('BTC'), 5))
+    usdt_depo = str(round(one_hundread_percent, 2))
+    data = datetime.now().strftime("%m.%d.%Y %H:%M")
+    zagolovok = data + '\nB' + bitcoin_depo + ' \n$' + usdt_depo
+    plt.title(zagolovok)
+    for k, v in in_positions.items():
+        if quantitys[k] > 0:
+        # if quantitys[k] != 0:
+            data_names.append(k)
+            # data_names.append(k + ' - ' + str(smart_round(v/one_percent, 1)) + '%')
+            data_values.append(v)
+
+    color = [
+        '#FAEBD7',
+        '#00FFFF',
+        '#7FFF00',
+        '#0000FF',
+        '#8A2BE2',
+        '#B8860B',
+        '#006400',
+        '#FF8C00',
+        '#8B0000',
+        '#8FBC8F',
+        '#2F4F4F',
+        '#00BFFF',
+        '#FF00FF',
+        '#DCDCDC',
+        '#7CFC00',
+        '#FFB6C1',
+        '#FF0000',
+        '#D2B48C',
+        '#FF7F50',
+        '#6495ED',
+        '#BDB76B',
+        '#FFD700',
+    ]
+
+    plt.pie(data_values,
+            labels=data_names,
+            autopct='%1.1f%%',
+            radius=1,
+            pctdistance=1.04,
+            labeldistance=1.12,
+            rotatelabels=bool,
+            colors=color,
+            )
+
+    plt.legend(
+        bbox_to_anchor=(-0.16, 0.45, 0.25, 0.25),
+        loc='lower left', labels=data_names)
+    fig.savefig('./static/img/pie.png')
+    fig.savefig(f"./static/img/stats/pie-{data.replace(':', '-')}.png")
+
+    content = {
+        'tikers': tikers,
+        'courses': courses,
+        'quantitys': quantitys,
+        'middles': middles,
+        'in_positions': in_positions,
+        'volumes': volumes,
+        'all_tikers_sort': all_tikers_sort,
+        'profilos_money': profilos_money,
+        'profilos_percent': profilos_percent,
+        'profilos': profilos,
+        'usdt': usdt_depo,
+        'btc': bitcoin_depo,
+    }
+
+    for k, v in content.items():
+        if type(v) == dict:
+            for kk, vv in v.items():
+                try:
+                    content[k][kk] = smart_round(vv, 1)
+                except:
+                    pass
+    page_load = f'--- page loads {round(datetime.now().timestamp() - start_time, 1)} seconds ---'
+    content['page_load'] = page_load
+    return render(request, 'main/stats.html', content)
+
+
+def operations(request):
+    start_time = datetime.now().timestamp()
+    actives = Operation.objects.order_by('-id')
+    all_tikers_sort = Operation.objects.order_by('tiker')
+    content = {
+        'title': 'Операции',
+        'active': actives,
+        'all_tikers_sort': all_tikers_sort,
+    }
+    page_load = f'--- page loads {round(datetime.now().timestamp() - start_time, 5)} seconds ---'
+    content['page_load'] = page_load
+    return render(request, 'main/operations.html', content)
+
+
 def tiker(request, name):
+    start_time = datetime.now().timestamp()
     error = ''
+    del_triger = False
+    print(f'{Operation.objects.all().last().id=}')
     if request.method == 'POST':
+        ids = 120
+        for id in range(ids):
+            oper = 'del_' + str(id)
+            if oper in request.POST:
+                print(f'!!!!!!!!!{oper}!!!!!!!!!!')
+                del_triger = True
+                Operation.objects.filter(id=id).delete()
         form = OperationForm(request.POST)
         if form.is_valid():
             form.save()
             # return redirect('index')
         else:
-            error = ' АШИПКА'
+            if del_triger == False:
+                error = ' АШИПКА'
+            else:
+                error = ''
     form = OperationForm()
-
-    # if request.GET('quantity', 'defaultOrderField'):
-    #     order_by = request.GET.get('quantity')
-    #     # btc = Operation.objects.all().order_by(order_by)
-    # else:
-    #     btc = Operation.objects.filter(tiker=name)
     btc = Operation.objects.filter(tiker=name)
     summa = []
     volumes = []
@@ -128,12 +361,13 @@ def tiker(request, name):
     itogo = btc.aggregate(Avg('quantity'))['quantity__avg'] * btc.count()
     volume = sum(volumes)
     itogo_real = sum(summa)
-    course = get_price(name)
+    course = get_price_binance(name)
     in_position = (itogo_real) * (course)
     try:
         middle_course = volume / itogo_real
     except:
         middle_course = 66666666
+        logging.error(f'chet ne to s kyrsom - {middle_course = }')
     comission = sum(comissions)
     all_tikers_sort = Operation.objects.order_by('tiker')
     delta_money = in_position - volume
@@ -152,10 +386,10 @@ def tiker(request, name):
         'itogo': itogo,
         'course': course,
         'itogo_real': round(itogo_real, 4),
-        'in_position': round(in_position,2),
-        'middle_course': round(middle_course,2),
-        'volume': round(volume,2),
-        'comission' : comission,
+        'in_position': round(in_position, 2),
+        'middle_course': smart_round(middle_course, 2),
+        'volume': smart_round(volume, 2),
+        'comission': round(comission, 2),
         'all_tikers_sort': all_tikers_sort,
         'delta_money': round(delta_money, 2),
         'profilos': profilos,
@@ -163,15 +397,16 @@ def tiker(request, name):
         'form': form,
         'error': error,
     }
+    page_load = f'--- page loads {round(datetime.now().timestamp() - start_time, 1)} seconds ---'
+    content['page_load'] = page_load
     return render(request, 'main/tiker.html', content)
 
-def stats(request):
 
+def test(request):
+    start_time = datetime.now().timestamp()
     all_tikers_sort = Operation.objects.order_by('tiker')
-
     btc = Operation.objects.order_by('tiker')
-    # btc = Operation.objects.filter(tiker='BTC')
-    # btc = Operation.objects.get(pk=1)
+
     tikers = {}
     courses = {}
     volumes = {}
@@ -182,52 +417,64 @@ def stats(request):
     profilos_percent = {}
     profilos = {}
 
-
     for b in btc:
-
+        logging.debug(f'{b=}')
         # tikers
         # course
         if b.tiker not in tikers:
             tikers[b.tiker] = b.tiker
-            courses[b.tiker] = 666
-            # courses[b.tiker] = get_price(b.tiker)
-
+            courses[b.tiker] = get_price_binance(b.tiker)
         # quantitys
         if b.tiker not in quantitys:
+            logging.debug(f'if_2')
             quantitys[b.tiker] = b.quantity_real
         else:
             quantitys[b.tiker] += b.quantity_real
         quantitys[b.tiker] = quantitys[b.tiker]
-
         # volumes
         if b.tiker not in volumes:
+            logging.debug(f'if_3')
             volumes[b.tiker] = b.quantity_real * b.price
         else:
             volumes[b.tiker] += (b.quantity_real * b.price)
-
-        #in_positions
+        # in_positions
         if b.tiker not in in_positions:
+            logging.debug(f'if_4')
             in_positions[b.tiker] = b.quantity_real * courses[b.tiker]
         else:
             in_positions[b.tiker] += b.quantity_real * courses[b.tiker]
 
-
     for t in tikers.values():
-
+        logging.debug(f'{t=}')
         # middles
         try:
             middles[t] = volumes[t] / quantitys[t]
         except:
             middles[t] = 66666
+            logging.error(f'chet fignya so srednej')
         # profilos_money
         # profilos_percent
         profilos_money[t] = in_positions[t] - volumes[t]
         if profilos_money[t] < 0:
             profilos[t] = 'ЛОСЬ'
-            profilos_percent[t] = (in_positions[t] / (volumes[t]/100)) - 100
+            profilos_percent[t] = (in_positions[t] / (volumes[t] / 100)) - 100
         else:
             profilos[t] = 'PROFIT'
             profilos_percent[t] = (in_positions[t] / (volumes[t] / 100)) - 100
+
+    logging.debug(f'{tikers=}')
+    logging.debug(f'{courses=}')
+    logging.debug(f'{volumes=}')
+    logging.debug(f'{quantitys=}')
+    logging.debug(f'{middles=}')
+    logging.debug(f'{in_positions=}')
+    logging.debug(f'{profilos_money=}')
+    logging.debug(f'{profilos_percent=}')
+    logging.debug(f'{profilos=}')
+
+    one_hundread_percent = sum(in_positions.values())
+    bitcoin_depo = '₿' + str(round(sum(in_positions.values()) / get_price_binance('BTC'), 5))
+    usdt_depo = '$' + str(round(one_hundread_percent, 2))
 
 
     content = {
@@ -241,34 +488,23 @@ def stats(request):
         'profilos_money': profilos_money,
         'profilos_percent': profilos_percent,
         'profilos': profilos,
-
+        'usdt': usdt_depo,
+        'btc': bitcoin_depo,
     }
 
     for k, v in content.items():
         if type(v) == dict:
             for kk, vv in v.items():
                 try:
-                    content[k][kk] = smart_round(vv)
+                    content[k][kk] = smart_round(vv, 0)
                 except:
                     pass
+                    logging.error(f'ERROR!')
 
-    return render(request, 'main/stats.html', content)
+    page_load = f'--- page loads {round(datetime.now().timestamp() - start_time, 0)} seconds ---'
+    content['page_load'] = page_load
+    return render(request, 'main/test.html', content)
 
-def test(request):
-    error = ''
-    if request.method == 'POST':
-        form = OperationForm(request.POST)
-        if form.is_valid():
-            form.save()
-            # return redirect('index')
-        else:
-            error = ' АШИПКА'
-    form = OperationForm()
-    form = {
-        'form': form,
-        'error': error,
-    }
-    return render(request, 'main/test.html', form)
 
 def test2(request):
     tikers = set()
@@ -284,4 +520,3 @@ def test2(request):
         'all_tikers_sort': all_tikers_sort,
     }
     return render(request, 'main/test.html', content)
-

@@ -1,46 +1,92 @@
 {% extends 'main/base.html' %}
 
+{% load main_filter %}
+
+{% load static %}
 
 {% block title %}
-    {{ title }}
+    ПОРТФЕЛЬ
 {% endblock %}
 
 {% block content %}
 
-    <table class="table_dark fixtable">
-    <caption>История операций</caption>
-    <thead>
+<hr class="balance">
+
+<table class="balance">
+    <tr>
+        <td> {{ usdt }} </td>
+        <td> {{ btc }} </td>
+    </tr>
+</table>
+
+<hr class="index">
+
+{% if tikers %}
+    {% for t in tikers.values %}
+        {% ifchanged %}
+    <table class="table_index">
         <tr>
-            <td>Тикер</td>
-            <td>Тип позиции</td>
-            <td>Количество</td>
-            <td>Цена</td>
-            <td>Сумма</td>
-            <td>Комиссия</td>
-            <td>Дата</td>
-            <td>Время</td>
-            <td>Вкл/выкл</td>
+            <td rowspan="2" style="width: 70px; " align="center">
+                <img src="{% static 'img/' %}{{ t }}.png" height="50">
+            </td>
+            <td align="left">
+                {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                    <span class="profit">
+                {% else %}
+                    <span class="loss">
+                {% endif %}
+                <a href="{% url 'index' %}tiker/{{ t }}">
+                    {{ t }}
+                </a></span>
+            </td>
+            <td  align="right">
+                {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                    <span class="profit">
+                {% else %}
+                    <span class="loss">
+                {% endif %}
+                {{ in_positions|get_value_from_dict:t }} $</span>
+            </td>
         </tr>
-    </thead>
-    <tbody>
-        {% if active %}
-            {% for a in active %}
-            <tr>
-                <td><a href="{% url 'index' %}tiker/{{ a.tiker }}">{{ a.tiker }}</a></td>
-                <td>{{ a.pozition }}</td>
-                <td>{{ a.quantity }} {{ a.tiker }}</td>
-                <td>{{ a.price }}$ </td>
-                <td>{{ a.summa}}$ </td>
-                <td>{{ a.comission}}$ </td>
-                <td>  </td>
-                <td>  </td>
-                <td>  </td>
-                <!-- <td>  </td> -->
-            </tr>
-            {% endfor %}
-        {% else %}
-            %(
-        {% endif %}
-    </tbody>
+        <tr>
+            <td align="left">
+                {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                    <span class="profit">
+                {% else %}
+                    <span class="loss">
+                {% endif %}
+                {{ quantitys|get_value_from_dict:t }} </span>
+                •
+                {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                    <span class="profit">
+                {% else %}
+                    <span class="loss">
+                {% endif %}
+                {{ courses|get_value_from_dict:t }} $</span>
+            </td>
+            <td align="right">
+
+                {% if t != 'USDT' %}
+                    {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                        <span class="profit">▲
+                    {% else %}
+                        <span class="loss">▼
+                    {% endif %}
+                    {{ profilos_money|get_value_from_dict:t }} $</span>
+                    {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                        <span class="profit">
+                    {% else %}
+                        <span class="loss">
+                    {% endif %}
+                    ({{ profilos_percent|get_value_from_dict:t }} %)</span>
+                {% endif %}
+            </td>
+        </tr>
     </table>
+<hr class="index">
+        {% endifchanged %}
+    {% endfor %}
+    {% else %}
+        ничего нет :(
+    {% endif %}
 {% endblock %}
