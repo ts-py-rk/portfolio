@@ -4,8 +4,16 @@ import sqlite3
 import logging
 from pprint import pprint
 
-logging.basicConfig(filename='excel_to_SQL.log', level=logging.DEBUG, format='%(levelname)s - %(message)s', filemode='w')
+logging.basicConfig(filename='excel_to_SQL.log', level=logging.DEBUG, format='%(levelname)s - %(message)s',
+                    filemode='w')
 from collections import OrderedDict
+
+
+def swap(lists):
+    for i in range(len(lists)):
+        lists[i][3], lists[i][4] = lists[i][4], lists[i][3]
+    return lists
+
 
 operations = OrderedDict()
 print(f'{os.getcwd()=}')
@@ -24,37 +32,28 @@ logging.debug(f'{sheets=}')
 logging.debug(f'{data=}')
 logging.debug(f'{i=}')
 
-
 for name in sheets:
     logging.debug(f'{name=}')
     sheet = wb[name]
     diapazon = tuple(sheet['C4':'F33'])
-
     logging.debug(f'{sheet=}')
     logging.debug(f'{diapazon=}')
 
     for row in diapazon:
         stroka.append(i)
         stroka.append(name)
-
         logging.debug(f'{row=}')
         logging.debug(f'1){stroka=}')
         logging.debug(f'2){stroka=}')
 
         for cell in row:
-
             logging.debug(f'{cell=} - "{cell.value=}')
-
-            if cell.value != None :
+            if cell.value != None:
                 if type(cell.value) == str:
                     if cell.value[:1] == '=':
-
                         logging.debug(f'ПЛОХАЯ ЯчЕЙКА')
-
                         continue
-
                 stroka.append(cell.value)
-
                 logging.debug(f'ХОРОШАЯ ЯчЕЙКА')
                 logging.debug(f'3){stroka=}')
 
@@ -66,8 +65,7 @@ for name in sheets:
 
         if len(stroka) == 5:
             data.append(stroka[:])
-            i+= 1
-
+            i += 1
             logging.debug(f'len(stroka) == 5')
             logging.debug(f'добавляем строку {stroka[:]} в список [data]')
             logging.debug(f'i+=1 = {i}')
@@ -81,6 +79,7 @@ for name in sheets:
 pprint(data)
 for d in data:
     logging.debug(f'{d=}')
+
 #
 # os.chdir('../../../')
 # conn = sqlite3.connect(r'db.sqlite3')

@@ -1,22 +1,269 @@
-{% extends 'main/base.html' %}
+<!doctype html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" type="image/x-icon" href="https://bin.bnbstatic.com/static/images/common/favicon.ico">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel ="stylesheet" href="{% static 'css/style.css' %}?ver={% now 'u'  %}">
+    <title>{% block title %}{% endblock %}</title>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script type="text/javascript" src="{% static 'scripts/script.js' %}?ver={% now 'u'  %}"></script>
+</head>
+<body>
+<script type="text/javascript">
+    setTimeout(function () {
+      location.reload();
+    }, 600 * 1000);
+</script>
 
-{% block title %}
-    {{ title }}
-{% endblock %}
-
-{% block content %}
-
-<form method="post">
-    {% csrf_token %}
-    {{ form.tiker }}<br>
-    {{ form.pozition }}<br>
-    {{ form.quantity }}<br>
-<!--    {{ form.price }}<br>-->
-    <input type="text" name="price" placeholder="цена">
-    <span>{{ error }}</span><br>
-    <button type="submit">ADD</button>
-</form>
 
 
 
-{% endblock %}
+<div class="groups-container">
+    <div class="group opened a">
+        <a href="#"><img style="padding: 10px 10px 1px 10px;" src="{% static 'img/1/portfolio.png'%}" width="62" title="Портфель"></a>
+    </div>
+    <div class="group b">
+        <a href="#"><img style="padding: 10px 10px 1px 10px;" src="{% static 'img/1/stats.png'%}" width="62" title="Статистика"></a>
+    </div>
+    <div class="group c">
+        <a href="#"><img style="padding: 10px 10px 1px 10px;" src="{% static 'img/1/operations.png'%}" width="62" title="Список операций"></a>
+    </div>
+    <div class="group d">
+        <a href="#"><img style="padding: 10px 10px 1px 10px;" src="{% static 'img/1/admin.png'%}" width="62" title="Панель администратора"></a>
+    </div>
+</div>
+
+<div class="tikers">
+{% if all_tikers_sort %}
+    <table class="table_index">
+        <tr>
+            {% for t in all_tikers_sort %}
+            {% ifchanged %}
+            <td  style="width: 40px; " align="center">
+                <a href="{% url 'index' %}tiker/{{ t }}">
+                    <img src="{% static 'img/' %}{{ t.tiker }}.png"
+                         {% if t.tiker == tiker %}
+                            height="60"
+                         {% else %}
+                            height="40"
+                         {% endif %}>
+                </a>
+            </td>
+            {% endifchanged %}
+            {% endfor %}
+        </tr>
+        <tr>
+            {% for t in all_tikers_sort %}
+            {% ifchanged %}
+            <td  style="width: 40px; " align="center">
+                <a href="{% url 'index' %}tiker/{{ t }}">
+                    {{ t.tiker }}
+                </a>
+            </td>
+            {% endifchanged %}
+            {% endfor %}
+        </tr>
+    </table>
+{% endif %}
+</div>
+
+<div class="content">
+
+    <div class="container opened a">
+        {% if tikers %}
+            {% for t in tikers.values %}
+                {% ifchanged %}
+                <table class="table_index">
+                    <tr>
+                        <td rowspan="2" style="width: 70px; " align="center">
+                            <img src="{% static 'img/' %}{{ t }}.png" height="50">
+                        </td>
+                        <td align="left">
+                            {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                <span class="profit">
+                            {% else %}
+                                <span class="loss">
+                            {% endif %}
+                            <a href="{% url 'index' %}tiker/{{ t }}">
+                                {{ t }}
+                            </a></span>
+                        </td>
+                        <td  align="right">
+                            {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                <span class="profit">
+                            {% else %}
+                                <span class="loss">
+                            {% endif %}
+                            {{ in_positions|get_value_from_dict:t }} $</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align="left">
+                            {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                <span class="profit">
+                            {% else %}
+                                <span class="loss">
+                            {% endif %}
+                            {{ quantitys|get_value_from_dict:t }} </span>
+                            •
+                            {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                <span class="profit">
+                            {% else %}
+                                <span class="loss">
+                            {% endif %}
+                            {{ courses|get_value_from_dict:t }} $</span>
+                        </td>
+                        <td align="right">
+
+                            {% if t != 'USDT' %}
+                                {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                    <span class="profit">▲
+                                {% else %}
+                                    <span class="loss">▼
+                                {% endif %}
+                                {{ profilos_money|get_value_from_dict:t }} $</span>
+                                {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                    <span class="profit">
+                                {% else %}
+                                    <span class="loss">
+                                {% endif %}
+                                ({{ profilos_percent|get_value_from_dict:t }} %)</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+                <hr class="index">
+                {% endifchanged %}
+            {% endfor %}
+    {% else %}
+        ничего нет :(
+    {% endif %}
+    </div>
+
+    <div class="container b">
+        <table class="table_sort">
+            <thead>
+                <tr>
+                    <th data-order="-1" class="sorted">Тикер</th>
+                    <th>Средняя, $</th>
+                    <!--            <th>-></th>-->
+                    <th>Курс, $</th>
+                    <th> $</th>
+                    <th> %</th>
+                    <th>Кол-во</th>
+                    <th>Было, $</th>
+                    <!--            <th>-></th>-->
+                    <th>Сейчас, $</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% if tikers %}
+               {% for t in tikers.values %}
+                   {% ifchanged %}
+                      <tr>
+                            <td>
+                                {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                    <span class="profit">
+                                {% else %}
+                                    <span class="loss">
+                                {% endif %}
+                                    <a href="{% url 'index' %}tiker/{{ t }}" about="_blank">
+                                    <img src="{% static 'img/' %}{{ t }}.png" height="12">
+                                    {{ t }}
+                                </a></span>
+                            </td>
+                            <td align="center">
+                                {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                    <span class="profit">
+                                {% else %}
+                                    <span class="loss">
+                                {% endif %}
+                                {{ middles|get_value_from_dict:t }} $</span>
+                            </td>
+                            <!--<td align="center"> -> </td>-->
+                            <td align="center">
+                                {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                    <span class="profit">
+                                {% else %}
+                                    <span class="loss">
+                                {% endif %}
+                                {{ courses|get_value_from_dict:t }} $</span>
+                            </td>
+                            <td>{% if t != 'USDT' %}
+                                {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                    <span class="profit">
+                                {% else %}
+                                    <span class="loss">
+                                {% endif %}
+                                 {{ profilos_money|get_value_from_dict:t }} $ </span>
+                                {% else %}<span class="profit">-</span>
+                                {% endif %}
+                            </td>
+                            <td>{% if t != 'USDT' %}
+                                {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                    <span class="profit">
+                                {% else %}
+                                    <span class="loss">
+                                {% endif %}
+                                {{ profilos_percent|get_value_from_dict:t }} %</span>
+                                {% else %}<span class="profit">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                    <span class="profit">
+                                {% else %}
+                                    <span class="loss">
+                                {% endif %}
+                                {{ quantitys|get_value_from_dict:t }} {{ t }}</span>
+                            </td>
+                            <td>
+                                {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                    <span class="profit">
+                                {% else %}
+                                    <span class="loss">
+                                {% endif %}
+                                {{ volumes|get_value_from_dict:t }} $</span>
+                            </td>
+                            <!--<td align="center"> -> </td>-->
+                            <td>
+                                {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
+                                    <span class="profit">
+                                {% else %}
+                                    <span class="loss">
+                                {% endif %}
+                                {{ in_positions|get_value_from_dict:t }} $</span>
+                            </td>
+                        </tr>
+                    {% endifchanged %}
+                {% endfor %}
+            {% else %}
+                ничего нет :(
+            {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="container c">
+        <a href="{% static 'img/stats/movie.gif' %}" target="_blank" >gif</a>
+        <img src="{% static 'img/pie.png' %}" height="350" onclick="changeSizeImage(this)" >
+    </div>
+
+    <div class="container d">
+        тут может быть что то еще
+        <a href="{% url 'test'   %}"><p align="center"><code>{{ page_load }}</code></p></a><br>
+    </div>
+
+</div>
+
+
+
+
+<!--<font color="blue"  onclick="changeColor(this)" > onclick="changeColor(this)" </font><br>-->
+
+</body>
+</html>
