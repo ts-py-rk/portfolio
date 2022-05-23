@@ -1,5 +1,7 @@
 {% extends 'main/base.html' %}
 
+{% load static %}
+
 {% load main_filter %}
 
 {% block title %}
@@ -7,44 +9,36 @@
 {% endblock %}
 
 {% block content %}
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
 
-    const getSort = ({ target }) => {
-        const order = (target.dataset.order = -(target.dataset.order || -1));
-        const index = [...target.parentNode.cells].indexOf(target);
-        const collator = new Intl.Collator(['en', 'ru'], { numeric: true });
-        const comparator = (index, order) => (a, b) => order * collator.compare(
-            a.children[index].innerHTML,
-            b.children[index].innerHTML
-        );
+<table class="balance">
+    <tr>
+        <td>
+           ${{ usdt }}
+        </td>
+        <td>
+            ₿{{ btc }}
+        </td>
+    </tr>
+</table>
 
-        for(const tBody of target.closest('table').tBodies)
-            tBody.append(...[...tBody.rows].sort(comparator(index, order)));
+<p align="center">
+    <a href="{% static 'img/stats/movie.gif' %}" target="_blank" >gif</a>
+    <img src="{% static 'img/pie.png' %}" height="350" onclick="changeSizeImage(this)" >
+</p>
 
-        for(const cell of target.parentNode.cells)
-            cell.classList.toggle('sorted', cell === target);
-    };
-
-    document.querySelectorAll('.table_sort thead').forEach(tableTH => tableTH.addEventListener('click', () => getSort(event)));
-
-});
-</script>
 <br>
-<!--    <table class="table_tiker">-->
     <table class="table_sort">
-        <caption>СТАТИСТИКА</caption>
         <thead>
         <tr>
             <th data-order="-1" class="sorted">Тикер</th>
             <th>Средняя, $</th>
-            <th>-></th>
+<!--            <th>-></th>-->
             <th>Курс, $</th>
             <th> $</th>
             <th> %</th>
             <th>Кол-во</th>
             <th>Было, $</th>
-            <th>-></th>
+<!--            <th>-></th>-->
             <th>Сейчас, $</th>
         </tr>
         </thead>
@@ -52,6 +46,7 @@
         {% if tikers %}
             {% for t in tikers.values %}
                 {% ifchanged %}
+                {% if quantitys|get_value_from_dict:t != 0 %}
                     <tr>
                         <td>
                             {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
@@ -59,11 +54,12 @@
                             {% else %}
                                 <span class="loss">
                             {% endif %}
-                            <a href="{% url 'index' %}tiker/{{ t }}">
+                            <a href="{% url 'index' %}tiker/{{ t }}" about="_blank">
+                                <img src="{% static 'img/' %}{{ t }}.png" height="12">
                                 {{ t }}
                             </a></span>
                         </td>
-                        <td align="right">
+                        <td align="center">
                             {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
                                 <span class="profit">
                             {% else %}
@@ -71,10 +67,8 @@
                             {% endif %}
                             {{ middles|get_value_from_dict:t }} $</span>
                         </td>
+<!--                        <td align="center"> -> </td>-->
                         <td align="center">
-                            ->
-                        </td>
-                        <td align="left">
                             {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
                                 <span class="profit">
                             {% else %}
@@ -82,21 +76,25 @@
                             {% endif %}
                             {{ courses|get_value_from_dict:t }} $</span>
                         </td>
-                        <td>
+                        <td>{% if t != 'USDT' %}
                             {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
                                 <span class="profit">
                             {% else %}
                                 <span class="loss">
                             {% endif %}
                              {{ profilos_money|get_value_from_dict:t }} $ </span>
+                            {% else %}<span class="profit">-</span>
+                            {% endif %}
                         </td>
-                        <td>
+                        <td>{% if t != 'USDT' %}
                             {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
                                 <span class="profit">
                             {% else %}
                                 <span class="loss">
                             {% endif %}
                             {{ profilos_percent|get_value_from_dict:t }} %</span>
+                            {% else %}<span class="profit">-</span>
+                            {% endif %}
                         </td>
                         <td>
                             {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
@@ -114,9 +112,7 @@
                             {% endif %}
                             {{ volumes|get_value_from_dict:t }} $</span>
                         </td>
-                        <td align="center">
-                            ->
-                        </td>
+<!--                        <td align="center"> -> </td>-->
                         <td>
                             {% if profilos|get_value_from_dict:t  == 'PROFIT' %}
                                 <span class="profit">
@@ -126,6 +122,9 @@
                             {{ in_positions|get_value_from_dict:t }} $</span>
                         </td>
                     </tr>
+                {% else %}
+
+                {% endif %}
                 {% endifchanged %}
             {% endfor %}
         {% else %}

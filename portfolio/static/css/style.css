@@ -1,22 +1,28 @@
 a {
   color: rgb(6, 84, 119);
+  text-decoration: none;
   /*transition: 0,1s;*/
 }
 
 a:visited {
   color: rgb(6, 84, 119);              /* Цвет посещённой ссылки */
+  /* */
 }
 
 a:hover {
   color: #cf0000;                   /* Цвет ссылки при наведении на нее мыши */
+  text-decoration: underline;
 }
 
 .profit {
     color: green;
+    vertical-align: middle;
 }
 
 .loss {
     color: red;
+        vertical-align: middle;
+
 }
 
 .spisok {
@@ -26,7 +32,27 @@ a:hover {
 	border-color: red;
 }
 
-.table_dark {
+.balance {
+    width: 320px;
+    text-align: center;
+    margin: auto;
+    font-family: "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
+	font-size: 20px;
+}
+
+.table_index {
+    font-family: "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
+	font-size: 10px;
+	width: 320px;
+    margin: auto;
+}
+
+hr.index {
+    width: 320px;
+    /* */
+}
+
+.table_operations {
 	font-family: "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
 	font-size: 14px;
 	width: 98%;
@@ -36,34 +62,34 @@ a:hover {
 	margin: 10px;
 padding: 10px;
 }
-.table_dark caption {
+.table_operations caption {
 	color: #000;
 	border: 1px solid #000;
 	padding: 12px 12px;
 	text-align: center;
 font-size: 22px;
 }
-.table_dark td {
+.table_operations td {
 	color: #000;
 	border:1px solid black;
 	padding: 7px 17px;
 }
-.table_dark tr:hover td {
+.table_operations tr:hover td {
 	text-decoration: underline;
 	color: red;
 	background-color: #ffc;
 }
-.table_dark caption, .table_dark td:first-child, .table_dark thead {
+.table_operations caption, .table_operations td:first-child, .table_operations thead {
 	text-align: center;
 	background-color: #ffc;
 }
-.table_dark caption, .table_dark thead {
+.table_operations caption, .table_operations thead {
 	text-align: center;
 	background-color: #ffc;
 
 
 }
-.table_dark thead td {
+.table_operations thead td {
 	position: -webkit-sticky;
 	position: -moz-sticky;
 	position: -ms-sticky;
@@ -73,7 +99,6 @@ font-size: 22px;
 	border:1px solid black;
 	background-color: #ffc;
 }
-
 
 .table_tiker {
 	font-family: "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
@@ -108,26 +133,20 @@ font-size: 22px;
 	/background-color: #ffc;
 }
 
-
-
-
-
 .table_sort {
 	font-family: "Lucida Sans Unicode", "Lucida Grande", Sans-Serif;
 	font-size: 14px;
-	width: 90%;
+	max-width: 1200px;
 	text-align: center;
 	border-collapse: collapse;
 	border: 1px;
     margin: auto;
 }
-
 .table_sort tr:hover td {
 	text-decoration: underline;
 	color: black;
 	background-color: #ffc;
 }
-
 .table_sort th {
     background: #ccc;
     color: #000;
@@ -137,34 +156,88 @@ font-size: 22px;
 
 
 }
-
 .table_sort td, th {
     border: 2px solid #846868;
 	color: #000;
 	border:1px solid black;
-	padding: 7px 17px;
+	padding: 3px 7px;
+    vertical-align: middle;
+    /* display: table-cell; */
 }
-
-.table_sort tbody tr:nth-child(even) {
-    background: #f3f3f3;
-
 th.sorted[data-order="1"],
 th.sorted[data-order="-1"] {
     position: relative;
+    /* */
 }
-
 th.sorted[data-order="1"]::after,
 th.sorted[data-order="-1"]::after {
     right: 8px;
     position: absolute;
 }
-
 th.sorted[data-order="-1"]::after {
-	content: "▼"
+	content: "▼";
+	/* */
+}
+th.sorted[data-order="1"]::after {
+	content: "▲";
+	/* */
+}
+.table_sort tbody tr:nth-child(even) {
+    background: #f3f3f3;
+    /* */
 }
 
-th.sorted[data-order="1"]::after {
-	content: "▲"
+
+
+.group {
+    position: relative;
+margin: auto;
+    float: left;
+    height: 180px;
+    width: 81px;
+    height: 100px;
+    /*background-color: green;*/
+    border: solid 0px red; /* Параметры рамки   !!!!!!!!!! */
+
 }
+.tikers {
+    position: absolute;
+margin: auto;
+    overflow-x: scroll; /* Добавляем полосу прокрутки */
+    width: 320px; /* Ширина блока */
+    height: 78px; /* Высота блока */
+    padding: 5px; /* Поля вокруг текста */
+    border: solid 1px black; /* Параметры рамки */
+    white-space: nowrap; /* Запрещаем перенос строк */
+    top: 120px;
+
+}
+.content {
+    position: absolute;
+margin: auto;
+    top: 220px;
+  width: 330px;
+ height: 300px;
+ border: solid 0px green; /* Параметры рамки  !!!! */
+
+}
+.opened {
+    background-color: #ffc;
+    /* */
+}
+.container {
+margin: auto;
+    display: none;
+    background-color: green;
+    border: solid 0px pink; /* Параметры рамки  !  */
+    height: 30%;
+
+
+}
+.container.opened {
+    display: block;
+    background-color: #ffc;
+    border: solid 0px blue; /* Параметры рамки !!!!!*/
+
 }
 
